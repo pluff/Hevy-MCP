@@ -195,6 +195,10 @@ async fn handle_notification(
     (StatusCode::ACCEPTED, "").into_response()
 }
 
+pub(crate) async fn health() -> Response {
+    (StatusCode::OK, "ok").into_response()
+}
+
 pub(crate) async fn delete_session(State(state): State<AppState>, headers: HeaderMap) -> Response {
     let session_id = match headers
         .get(MCP_SESSION_HEADER)

@@ -34,7 +34,10 @@ async fn main() -> Result<(), AppError> {
     let router = HevyRouter::new(api_key);
     let addr = match env::var("HEVY_HTTP_ADDR") {
         Ok(value) => value,
-        Err(env::VarError::NotPresent) => "127.0.0.1:3000".to_string(),
+        Err(env::VarError::NotPresent) => match env::var("PORT") {
+            Ok(port) => format!("0.0.0.0:{port}"),
+            Err(_) => "127.0.0.1:3000".to_string(),
+        },
         Err(env::VarError::NotUnicode(_)) => {
             return Err(AppError::EnvVar(
                 "HEVY_HTTP_ADDR must be valid UTF-8".to_string(),
