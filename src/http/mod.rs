@@ -14,6 +14,7 @@ use tracing::info;
 use crate::HevyRouter;
 
 mod handler;
+mod oauth;
 mod session;
 
 pub async fn serve(router: HevyRouter, addr: SocketAddr) -> Result<(), HttpError> {
@@ -25,19 +26,35 @@ pub async fn serve(router: HevyRouter, addr: SocketAddr) -> Result<(), HttpError
     let session_manager = Arc::new(session::SessionManager::new(session_timeout_secs));
     session_manager.clone().start_cleanup_task();
 
-    let state = handler::AppState {
-        router: Arc::new(router),
-        session_manager,
-    };
-
     let path = match env::var("HEVY_MCP_PATH") {
         Ok(p) if p.starts_with('/') => p,
         Ok(p) => format!("/{p}"),
         Err(_) => "/".to_string(),
     };
 
+    let state = handler::AppState {
+        router: Arc::new(router),
+        session_manager,
+        oauth: Arc::new(oauth::OAuth::from_env(&path)),
+    };
+
     let app = Router::new()
         .route("/health", get(handler::health))
+        .route(
+            "/.well-known/oauth-protected-resource",
+            get(oauth::protected_resource),
+        )
+        .route(
+            "/.well-known/oauth-protected-resource/*rest",
+            get(oauth::protected_resource),
+        )
+        .route(
+            "/.well-known/oauth-authorization-server",
+            get(oauth::authorization_server),
+        )
+        .route("/register", post(oauth::register))
+        .route("/authorize", get(oauth::authorize_get).post(oauth::authorize_post))
+        .route("/token", post(oauth::token))
         .route(&path, post(handler::mcp_handler))
         .route(&path, delete(handler::delete_session))
         .with_state(state);

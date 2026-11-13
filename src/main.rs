@@ -3,7 +3,7 @@ use std::io::stderr;
 use std::net::AddrParseError;
 
 use thiserror::Error;
-use tracing::{Level, info};
+use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 
 use hevy_mcp_server::{HevyRouter, http};
@@ -16,22 +16,7 @@ async fn main() -> Result<(), AppError> {
         .with_writer(stderr)
         .init();
 
-    let api_key = match env::var("HEVY_API_KEY") {
-        Ok(value) => Some(value),
-        Err(env::VarError::NotPresent) => None,
-        Err(env::VarError::NotUnicode(_)) => {
-            return Err(AppError::EnvVar(
-                "HEVY_API_KEY must be valid UTF-8".to_string(),
-            ));
-        }
-    };
-
-    match &api_key {
-        Some(_) => info!("Running in single-user mode with default API key"),
-        None => info!("Running in multi-user mode - API key required per request"),
-    }
-
-    let router = HevyRouter::new(api_key);
+    let router = HevyRouter::new();
     let addr = match env::var("HEVY_HTTP_ADDR") {
         Ok(value) => value,
         Err(env::VarError::NotPresent) => match env::var("PORT") {

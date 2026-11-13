@@ -23,14 +23,18 @@ use crate::router::tools::list_tools;
 #[derive(Clone)]
 pub struct HevyRouter {
     client_cache: Arc<DashMap<String, Arc<HevyClient>>>,
-    pub default_api_key: Option<String>,
+}
+
+impl Default for HevyRouter {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl HevyRouter {
-    pub fn new(default_api_key: Option<String>) -> Self {
+    pub fn new() -> Self {
         Self {
             client_cache: Arc::new(DashMap::new()),
-            default_api_key,
         }
     }
 

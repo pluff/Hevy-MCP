@@ -6,7 +6,7 @@ MCP server for the [Hevy](https://hevy.com) fitness API, with HTTP transport and
 
 ```bash
 docker pull ghcr.io/zelosleone/hevy-mcp-server:latest
-docker run -e HEVY_API_KEY=your-api-key -p 5000:5000 ghcr.io/zelosleone/hevy-mcp-server:latest
+docker run -e OAUTH_SECRET=long-random-string -p 5000:5000 ghcr.io/zelosleone/hevy-mcp-server:latest
 ```
 
 ## Requirements
@@ -18,30 +18,26 @@ docker run -e HEVY_API_KEY=your-api-key -p 5000:5000 ghcr.io/zelosleone/hevy-mcp
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `HEVY_API_KEY` | No | -- | API key from Hevy developer settings. Enables single-user mode. If unset, each client must provide `?apikey=xxx` on url parameter. |
 | `HEVY_HTTP_ADDR` | No | `127.0.0.1:3000` (source) / `0.0.0.0:5000` (Docker) | Socket address to bind the HTTP server |
 | `HEVY_MCP_PATH` | No | `/` | HTTP route path for the MCP endpoint. A leading `/` is added automatically if missing. |
 | `HEVY_SESSION_TIMEOUT_SECS` | No | `3600` | Seconds of inactivity before a session expires |
 
-## Operating modes
+## Authentication
 
-### Single-user mode
+Each client supplies its own Hevy API key; there is no server-wide key.
 
-Set the `HEVY_API_KEY` environment variable. All sessions share this key -- no query parameter needed.
+### OAuth 2.1
 
-```bash
-HEVY_API_KEY=your-api-key ./target/release/hevy-mcp-server
-```
+When no key is supplied, the server answers `401` with a `WWW-Authenticate` header pointing at `/.well-known/oauth-protected-resource`. MCP clients (e.g. Gemini) then run the standard flow: discovery, dynamic client registration (`/register`), PKCE authorization (`/authorize` shows a page where the user pastes their Hevy API key), and `/token`. Tokens are stateless encrypted blobs, so nothing is stored.
 
-### Multi-user mode
+| Variable | Description |
+|----------|-------------|
+| `OAUTH_SECRET` | Encryption secret for codes/tokens. Set it, or tokens are invalidated on every restart. |
+| `PUBLIC_HOST` | Public hostname without scheme (e.g. `hevy.example.com`). The scheme is always `https`. Taken from the `Host`/`X-Forwarded-Host` header if unset. |
+| `OAUTH_CLIENT_ID` / `OAUTH_CLIENT_SECRET` | Optional pre-registered client for platforms that ask for a client id/secret instead of dynamic registration. |
+| `OAUTH_REDIRECT_URIS` | Optional comma-separated redirect URI allowlist for that static client. |
 
-Leave `HEVY_API_KEY` unset. Each client must pass its own key as a query parameter during initialization:
-
-```
-POST /?apikey=xxx
-```
-
-If neither method provides a key, the server responds with an error.
+Only OAuth access tokens (`Authorization: Bearer <token>`) are accepted.
 
 ## HTTP transport
 
@@ -97,13 +93,13 @@ Mcp-Session-Id: <session-id>
 
 ```bash
 cargo build --release
-HEVY_API_KEY=your-api-key ./target/release/hevy-mcp-server
+./target/release/hevy-mcp-server
 ```
 
 The server binds to `127.0.0.1:3000` by default. Override with `HEVY_HTTP_ADDR`:
 
 ```bash
-HEVY_API_KEY=your-api-key HEVY_HTTP_ADDR=0.0.0.0:8080 ./target/release/hevy-mcp-server
+HEVY_HTTP_ADDR=0.0.0.0:8080 ./target/release/hevy-mcp-server
 ```
 
 ## License

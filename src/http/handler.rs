@@ -2,7 +2,7 @@ use crate::HevyRouter;
 use crate::http::session::SessionManager;
 use crate::router::RequestRouter;
 use axum::body::{Body, to_bytes};
-use axum::extract::{Query, State};
+use axum::extract::State;
 use axum::http::{HeaderMap, StatusCode, header};
 use axum::response::{IntoResponse, Response};
 use mcp_server::router::RouterService;
@@ -10,7 +10,7 @@ use mcp_spec::protocol::{
     ErrorData, INTERNAL_ERROR, INVALID_REQUEST, JsonRpcError, JsonRpcMessage, JsonRpcNotification,
     JsonRpcRequest, JsonRpcResponse, PARSE_ERROR,
 };
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use serde_json::{from_slice, to_string};
 use std::sync::Arc;
 use tower_service::Service;
@@ -21,16 +21,11 @@ const MCP_SESSION_HEADER: &str = "Mcp-Session-Id";
 pub(crate) struct AppState {
     pub(crate) router: Arc<HevyRouter>,
     pub(crate) session_manager: Arc<SessionManager>,
-}
-
-#[derive(Deserialize)]
-pub(crate) struct McpQuery {
-    apikey: Option<String>,
+    pub(crate) oauth: Arc<super::oauth::OAuth>,
 }
 
 pub(crate) async fn mcp_handler(
     State(state): State<AppState>,
-    Query(query): Query<McpQuery>,
     headers: HeaderMap,
     body: Body,
 ) -> Response {
@@ -44,6 +39,12 @@ pub(crate) async fn mcp_handler(
         }
     };
 
+    let bearer_key = match state.oauth.bearer_key(&headers) {
+        Some(Ok(key)) => Some(key),
+        Some(Err(())) => return state.oauth.unauthorized(&headers, true),
+        None => None,
+    };
+
     let message: JsonRpcMessage = match from_slice(&body_bytes) {
         Ok(msg) => msg,
         Err(err) => return error_response(PARSE_ERROR, format!("Invalid JSON: {}", err)),
@@ -55,7 +56,7 @@ pub(crate) async fn mcp_handler(
         .map(|s| s.to_string());
 
     match message {
-        JsonRpcMessage::Request(request) => handle_request(state, query, session_id, request).await,
+        JsonRpcMessage::Request(request) => handle_request(state, bearer_key, headers, session_id, request).await,
         JsonRpcMessage::Notification(notification) => {
             handle_notification(state, session_id, notification).await
         }
@@ -68,12 +69,13 @@ pub(crate) async fn mcp_handler(
 
 async fn handle_request(
     state: AppState,
-    query: McpQuery,
+    bearer_key: Option<String>,
+    headers: HeaderMap,
     session_id: Option<String>,
     request: JsonRpcRequest,
 ) -> Response {
     if request.method == "initialize" {
-        return handle_initialize(state, query, request).await;
+        return handle_initialize(state, bearer_key, headers, request).await;
     }
 
     let session_id = match session_id {
@@ -127,18 +129,15 @@ async fn handle_request(
     json_response(response)
 }
 
-async fn handle_initialize(state: AppState, query: McpQuery, request: JsonRpcRequest) -> Response {
-    let api_key = match query
-        .apikey
-        .or_else(|| state.router.default_api_key.clone())
-    {
+async fn handle_initialize(
+    state: AppState,
+    bearer_key: Option<String>,
+    headers: HeaderMap,
+    request: JsonRpcRequest,
+) -> Response {
+    let api_key = match bearer_key {
         Some(key) => key,
-        None => {
-            return error_response(
-                INVALID_REQUEST,
-                "API key required. Provide via ?apikey=xxx query parameter or HEVY_API_KEY environment variable".to_string(),
-            )
-        }
+        None => return state.oauth.unauthorized(&headers, false),
     };
 
     let session = state.session_manager.new_session(api_key);
