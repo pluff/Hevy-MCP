@@ -1,7 +1,6 @@
 use std::env;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use std::time::Duration;
 
 use axum::{
     Router,
@@ -13,7 +12,7 @@ use axum::{
     serve as axum_serve,
 };
 use rmcp::transport::streamable_http_server::{
-    StreamableHttpServerConfig, StreamableHttpService, session::local::LocalSessionManager,
+    StreamableHttpServerConfig, StreamableHttpService, session::never::NeverSessionManager,
 };
 use thiserror::Error;
 use tokio::net::TcpListener;
@@ -47,25 +46,24 @@ async fn require_bearer(State(state): State<AppState>, mut req: Request, next: N
 }
 
 pub async fn serve(addr: SocketAddr) -> Result<(), HttpError> {
-    let session_timeout_secs: u64 = env::var("HEVY_SESSION_TIMEOUT_SECS")
-        .ok()
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(3600);
-
     let path = match env::var("HEVY_MCP_PATH") {
         Ok(p) if p.starts_with('/') => p,
         Ok(p) => format!("/{p}"),
         Err(_) => "/".to_string(),
     };
 
-    let mut session_manager = LocalSessionManager::default();
-    session_manager.session_config.keep_alive = Some(Duration::from_secs(session_timeout_secs));
-
     // rmcp validates the Host header against `allowed_hosts` (DNS-rebinding protection) and
     // defaults to loopback only, which would reject the deployed hostname. Every MCP request
     // here requires an OAuth bearer token (not ambient browser credentials), so rebinding is
     // not a threat: allow any host unless HEVY_ALLOWED_HOSTS (comma-separated) is set.
-    let mut config = StreamableHttpServerConfig::default();
+    // Stateless mode with plain JSON responses: no Mcp-Session-Id, every POST returns
+    // `application/json` (no SSE priming event). Some clients (e.g. Gemini) cannot parse an
+    // SSE reply to POST and stall after `initialize`. `json_response` only takes effect
+    // when `legacy_session_mode` is false. The tools here never emit server-initiated
+    // messages, so nothing needs a session.
+    let mut config = StreamableHttpServerConfig::default()
+        .with_legacy_session_mode(false)
+        .with_json_response(true);
     config = match env::var("HEVY_ALLOWED_HOSTS") {
         Ok(hosts) if !hosts.trim().is_empty() => config.with_allowed_hosts(
             hosts
@@ -79,7 +77,7 @@ pub async fn serve(addr: SocketAddr) -> Result<(), HttpError> {
 
     let mcp_service = StreamableHttpService::new(
         || Ok(HevyServer::new()),
-        Arc::new(session_manager),
+        Arc::new(NeverSessionManager::default()),
         config,
     );
 

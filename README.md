@@ -1,6 +1,6 @@
 # Hevy MCP Server
 
-MCP server for the [Hevy](https://hevy.com) fitness API, with HTTP transport and session management. Entirely written in Rust for low memory management. Also, proper async support!!!
+MCP server for the [Hevy](https://hevy.com) fitness API, with stateless HTTP transport. Entirely written in Rust for low memory management. Also, proper async support!!!
 
 ## Quick start with Docker
 
@@ -21,7 +21,6 @@ docker run -e OAUTH_SECRET=long-random-string -p 5000:5000 ghcr.io/zelosleone/he
 | `LOG_LEVEL` | No | `info` | `error`, `warn`, `info` or `debug`. `info` logs one line per request (method, path, status, latency). `debug` also logs request/response headers and bodies with secrets (API keys, tokens, codes) redacted. |
 | `HEVY_HTTP_ADDR` | No | `127.0.0.1:3000` (source) / `0.0.0.0:5000` (Docker) | Socket address to bind the HTTP server |
 | `HEVY_MCP_PATH` | No | `/` | HTTP route path for the MCP endpoint. A leading `/` is added automatically if missing. |
-| `HEVY_SESSION_TIMEOUT_SECS` | No | `3600` | Seconds of inactivity before a session expires |
 | `HEVY_ALLOWED_HOSTS` | No | unset (any Host accepted) | Comma-separated `Host` allowlist (e.g. `example.up.railway.app`) for rmcp DNS-rebinding protection. Left unset the check is disabled, since every MCP request needs an OAuth bearer token. |
 
 ## Authentication
@@ -53,22 +52,19 @@ Every MCP request must carry `Authorization: Bearer <token>`; requests without a
 
 ### `POST {path}` -- MCP requests
 
-Send JSON-RPC requests and notifications. The first request must be an `initialize` call. Responses to `initialize` and `tools/call` are `text/event-stream` (SSE), not plain JSON; notifications are acknowledged with `202`. The `initialize` response includes an `Mcp-Session-Id` header that must be sent on all subsequent requests.
+Send JSON-RPC requests and notifications. Requests (`initialize`, `tools/list`, `tools/call`, ...) are answered with plain `application/json`; notifications are acknowledged with `202`. The server is stateless: no `Mcp-Session-Id` is issued and no `initialize` call is required before other requests.
 
 ```
 POST /
 Authorization: Bearer <token>
 Content-Type: application/json
 Accept: application/json, text/event-stream
-Mcp-Session-Id: <session-id>
 ```
 
-### Session lifecycle
+### Sessions
 
-- A new session is created on each `initialize` request and its ID is returned via the `Mcp-Session-Id` response header.
-- All non-initialize requests must include the `Mcp-Session-Id` header; requests without it are rejected.
-- Sessions are closed by rmcp after `HEVY_SESSION_TIMEOUT_SECS` seconds of inactivity (default 3600).
-- `DELETE {path}` with the session header closes a session and returns `202`.
+- There are no sessions. An `Mcp-Session-Id` header sent by a client is ignored.
+- `GET {path}` (SSE stream) and `DELETE {path}` return `405 Method Not Allowed` (`Allow: POST`).
 
 ## Available tools
 
