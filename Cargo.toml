@@ -28,6 +28,9 @@ sha2 = "0.10"
 base64 = "0.22"
 urlencoding = "2"
 uuid = { version = "1.7", features = ["v4", "fast-rng"] }
+rmcp = { version = "3.10.0", features = ["server", "macros", "transport-streamable-http-server"] }
+schemars = "1.2.3"
+http = "1"
 
 [profile.release]
 lto = true

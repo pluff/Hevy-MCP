@@ -1,0 +1,738 @@
+{
+  "tools": [
+    {
+      "description": "List workouts from Hevy with pagination. Returns workout summaries including title, date, and exercises.",
+      "inputSchema": {
+        "properties": {
+          "page": {
+            "description": "Page number (1-indexed)",
+            "type": "number"
+          },
+          "page_size": {
+            "description": "Number of items per page (max 10)",
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "name": "get_workouts"
+    },
+    {
+      "description": "Get the total number of workouts on the account.",
+      "inputSchema": {
+        "properties": {},
+        "type": "object"
+      },
+      "name": "get_workouts_count"
+    },
+    {
+      "description": "List workout update and delete events since a given date, with pagination.",
+      "inputSchema": {
+        "properties": {
+          "page": {
+            "description": "Page number (1-indexed)",
+            "type": "number"
+          },
+          "page_size": {
+            "description": "Number of items per page (max 10)",
+            "type": "number"
+          },
+          "since": {
+            "description": "ISO 8601 timestamp to start from",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "name": "get_workout_events"
+    },
+    {
+      "description": "Get a single workout by its ID. Returns full workout details including all exercises and sets.",
+      "inputSchema": {
+        "properties": {
+          "id": {
+            "description": "The workout ID",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "name": "get_workout"
+    },
+    {
+      "description": "Create a new workout in Hevy. Requires title, start_time, end_time (ISO 8601), and exercises with sets.",
+      "inputSchema": {
+        "properties": {
+          "description": {
+            "description": "Optional description",
+            "type": "string"
+          },
+          "end_time": {
+            "description": "End time in ISO 8601 format",
+            "type": "string"
+          },
+          "exercises": {
+            "description": "Exercises in the workout",
+            "items": {
+              "properties": {
+                "exercise_template_id": {
+                  "description": "Exercise template ID",
+                  "type": "string"
+                },
+                "notes": {
+                  "description": "Exercise notes",
+                  "type": "string"
+                },
+                "sets": {
+                  "description": "Sets in the exercise",
+                  "items": {
+                    "properties": {
+                      "custom_metric": {
+                        "description": "Custom metric value",
+                        "type": "number"
+                      },
+                      "distance_meters": {
+                        "description": "Distance in meters",
+                        "type": "number"
+                      },
+                      "duration_seconds": {
+                        "description": "Duration in seconds",
+                        "type": "number"
+                      },
+                      "reps": {
+                        "description": "Number of reps",
+                        "type": "number"
+                      },
+                      "rpe": {
+                        "description": "Rate of perceived exertion (1-10)",
+                        "type": "number"
+                      },
+                      "set_type": {
+                        "description": "Type of set",
+                        "enum": [
+                          "normal",
+                          "warmup",
+                          "dropset",
+                          "failure"
+                        ],
+                        "type": "string"
+                      },
+                      "weight_kg": {
+                        "description": "Weight in kg",
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "set_type"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "superset_id": {
+                  "description": "Superset group ID",
+                  "type": "number"
+                }
+              },
+              "required": [
+                "exercise_template_id"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "is_private": {
+            "description": "Whether the workout is private",
+            "type": "boolean"
+          },
+          "start_time": {
+            "description": "Start time in ISO 8601 format",
+            "type": "string"
+          },
+          "title": {
+            "description": "Workout title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "start_time",
+          "end_time"
+        ],
+        "type": "object"
+      },
+      "name": "create_workout"
+    },
+    {
+      "description": "Update an existing workout by ID. Replaces all workout data with the provided values.",
+      "inputSchema": {
+        "properties": {
+          "description": {
+            "description": "Optional description",
+            "type": "string"
+          },
+          "end_time": {
+            "description": "End time in ISO 8601 format",
+            "type": "string"
+          },
+          "exercises": {
+            "description": "Exercises in the workout",
+            "items": {
+              "properties": {
+                "exercise_template_id": {
+                  "description": "Exercise template ID",
+                  "type": "string"
+                },
+                "notes": {
+                  "description": "Exercise notes",
+                  "type": "string"
+                },
+                "sets": {
+                  "description": "Sets in the exercise",
+                  "items": {
+                    "properties": {
+                      "custom_metric": {
+                        "description": "Custom metric value",
+                        "type": "number"
+                      },
+                      "distance_meters": {
+                        "description": "Distance in meters",
+                        "type": "number"
+                      },
+                      "duration_seconds": {
+                        "description": "Duration in seconds",
+                        "type": "number"
+                      },
+                      "reps": {
+                        "description": "Number of reps",
+                        "type": "number"
+                      },
+                      "rpe": {
+                        "description": "Rate of perceived exertion (1-10)",
+                        "type": "number"
+                      },
+                      "set_type": {
+                        "description": "Type of set",
+                        "enum": [
+                          "normal",
+                          "warmup",
+                          "dropset",
+                          "failure"
+                        ],
+                        "type": "string"
+                      },
+                      "weight_kg": {
+                        "description": "Weight in kg",
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "set_type"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "superset_id": {
+                  "description": "Superset group ID",
+                  "type": "number"
+                }
+              },
+              "required": [
+                "exercise_template_id"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "id": {
+            "description": "The workout ID to update",
+            "type": "string"
+          },
+          "is_private": {
+            "description": "Whether the workout is private",
+            "type": "boolean"
+          },
+          "start_time": {
+            "description": "Start time in ISO 8601 format",
+            "type": "string"
+          },
+          "title": {
+            "description": "Workout title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "start_time",
+          "end_time"
+        ],
+        "type": "object"
+      },
+      "name": "update_workout"
+    },
+    {
+      "description": "List workout routines from Hevy with pagination. Routines are workout templates you can start workouts from.",
+      "inputSchema": {
+        "properties": {
+          "page": {
+            "description": "Page number (1-indexed)",
+            "type": "number"
+          },
+          "page_size": {
+            "description": "Number of items per page (max 10)",
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "name": "get_routines"
+    },
+    {
+      "description": "Get a single routine by its ID. Returns full routine details including all exercises and set templates.",
+      "inputSchema": {
+        "properties": {
+          "id": {
+            "description": "The routine ID",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "name": "get_routine"
+    },
+    {
+      "description": "Create a new workout routine in Hevy. Routines serve as templates for workouts.",
+      "inputSchema": {
+        "properties": {
+          "exercises": {
+            "description": "Exercises in the routine",
+            "items": {
+              "properties": {
+                "exercise_template_id": {
+                  "description": "Exercise template ID",
+                  "type": "string"
+                },
+                "notes": {
+                  "description": "Exercise notes",
+                  "type": "string"
+                },
+                "rest_seconds": {
+                  "description": "Rest time between sets in seconds",
+                  "type": "number"
+                },
+                "sets": {
+                  "description": "Set templates in the exercise",
+                  "items": {
+                    "properties": {
+                      "custom_metric": {
+                        "description": "Custom metric value",
+                        "type": "number"
+                      },
+                      "distance_meters": {
+                        "description": "Distance in meters",
+                        "type": "number"
+                      },
+                      "duration_seconds": {
+                        "description": "Duration in seconds",
+                        "type": "number"
+                      },
+                      "rep_range": {
+                        "description": "Rep range for the set",
+                        "properties": {
+                          "end": {
+                            "description": "Max reps",
+                            "type": "number"
+                          },
+                          "start": {
+                            "description": "Min reps",
+                            "type": "number"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "reps": {
+                        "description": "Number of reps",
+                        "type": "number"
+                      },
+                      "set_type": {
+                        "description": "Type of set",
+                        "enum": [
+                          "normal",
+                          "warmup",
+                          "dropset",
+                          "failure"
+                        ],
+                        "type": "string"
+                      },
+                      "weight_kg": {
+                        "description": "Weight in kg",
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "set_type"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "superset_id": {
+                  "description": "Superset group ID",
+                  "type": "number"
+                }
+              },
+              "required": [
+                "exercise_template_id"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "folder_id": {
+            "description": "Folder ID to place the routine in (use get_routine_folders to list available folders)",
+            "type": "string"
+          },
+          "notes": {
+            "description": "Optional notes",
+            "type": "string"
+          },
+          "title": {
+            "description": "Routine title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "folder_id"
+        ],
+        "type": "object"
+      },
+      "name": "create_routine"
+    },
+    {
+      "description": "Update an existing routine by ID. Replaces all routine data with the provided values.",
+      "inputSchema": {
+        "properties": {
+          "exercises": {
+            "description": "Exercises in the routine",
+            "items": {
+              "properties": {
+                "exercise_template_id": {
+                  "description": "Exercise template ID",
+                  "type": "string"
+                },
+                "notes": {
+                  "description": "Exercise notes",
+                  "type": "string"
+                },
+                "rest_seconds": {
+                  "description": "Rest time between sets in seconds",
+                  "type": "number"
+                },
+                "sets": {
+                  "description": "Set templates in the exercise",
+                  "items": {
+                    "properties": {
+                      "custom_metric": {
+                        "description": "Custom metric value",
+                        "type": "number"
+                      },
+                      "distance_meters": {
+                        "description": "Distance in meters",
+                        "type": "number"
+                      },
+                      "duration_seconds": {
+                        "description": "Duration in seconds",
+                        "type": "number"
+                      },
+                      "rep_range": {
+                        "description": "Rep range for the set",
+                        "properties": {
+                          "end": {
+                            "description": "Max reps",
+                            "type": "number"
+                          },
+                          "start": {
+                            "description": "Min reps",
+                            "type": "number"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "reps": {
+                        "description": "Number of reps",
+                        "type": "number"
+                      },
+                      "set_type": {
+                        "description": "Type of set",
+                        "enum": [
+                          "normal",
+                          "warmup",
+                          "dropset",
+                          "failure"
+                        ],
+                        "type": "string"
+                      },
+                      "weight_kg": {
+                        "description": "Weight in kg",
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "set_type"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "superset_id": {
+                  "description": "Superset group ID",
+                  "type": "number"
+                }
+              },
+              "required": [
+                "exercise_template_id"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "id": {
+            "description": "The routine ID to update",
+            "type": "string"
+          },
+          "notes": {
+            "description": "Optional notes",
+            "type": "string"
+          },
+          "title": {
+            "description": "Routine title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ],
+        "type": "object"
+      },
+      "name": "update_routine"
+    },
+    {
+      "description": "List exercise templates from Hevy's exercise library. These are the exercises you can add to workouts and routines.",
+      "inputSchema": {
+        "properties": {
+          "page": {
+            "description": "Page number (1-indexed)",
+            "type": "number"
+          },
+          "page_size": {
+            "description": "Number of items per page (max 100)",
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "name": "get_exercise_templates"
+    },
+    {
+      "description": "Get a single exercise template by its ID. Returns exercise details including muscle groups and equipment.",
+      "inputSchema": {
+        "properties": {
+          "id": {
+            "description": "The exercise template ID",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "name": "get_exercise_template"
+    },
+    {
+      "description": "Create a new custom exercise template.",
+      "inputSchema": {
+        "properties": {
+          "equipment_category": {
+            "description": "Equipment category",
+            "enum": [
+              "barbell",
+              "dumbbell",
+              "machine",
+              "cable",
+              "bodyweight",
+              "band",
+              "kettlebell",
+              "trap_bar",
+              "smith_machine",
+              "other"
+            ],
+            "type": "string"
+          },
+          "exercise_type": {
+            "description": "Exercise type",
+            "enum": [
+              "weight_reps",
+              "reps",
+              "duration",
+              "weight_duration",
+              "distance_duration",
+              "weight"
+            ],
+            "type": "string"
+          },
+          "muscle_group": {
+            "description": "Primary muscle group",
+            "enum": [
+              "abdominals",
+              "abductors",
+              "adductors",
+              "biceps",
+              "calves",
+              "cardio",
+              "chest",
+              "forearms",
+              "full_body",
+              "glutes",
+              "hamstrings",
+              "lats",
+              "lower_back",
+              "neck",
+              "quadriceps",
+              "shoulders",
+              "traps",
+              "triceps",
+              "upper_back",
+              "other"
+            ],
+            "type": "string"
+          },
+          "other_muscles": {
+            "description": "Optional additional muscle groups",
+            "items": {
+              "enum": [
+                "abdominals",
+                "abductors",
+                "adductors",
+                "biceps",
+                "calves",
+                "cardio",
+                "chest",
+                "forearms",
+                "full_body",
+                "glutes",
+                "hamstrings",
+                "lats",
+                "lower_back",
+                "neck",
+                "quadriceps",
+                "shoulders",
+                "traps",
+                "triceps",
+                "upper_back",
+                "other"
+              ],
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "title": {
+            "description": "Exercise title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "exercise_type",
+          "equipment_category",
+          "muscle_group"
+        ],
+        "type": "object"
+      },
+      "name": "create_exercise_template"
+    },
+    {
+      "description": "Get exercise history for a specific exercise template.",
+      "inputSchema": {
+        "properties": {
+          "end_date": {
+            "description": "Optional ISO 8601 end date",
+            "type": "string"
+          },
+          "exercise_template_id": {
+            "description": "Exercise template ID",
+            "type": "string"
+          },
+          "start_date": {
+            "description": "Optional ISO 8601 start date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "exercise_template_id"
+        ],
+        "type": "object"
+      },
+      "name": "get_exercise_history"
+    },
+    {
+      "description": "List routine folders from Hevy. Folders help organize your workout routines.",
+      "inputSchema": {
+        "properties": {
+          "page": {
+            "description": "Page number (1-indexed)",
+            "type": "number"
+          },
+          "page_size": {
+            "description": "Number of items per page (max 10)",
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "name": "get_routine_folders"
+    },
+    {
+      "description": "Get a single routine folder by its ID.",
+      "inputSchema": {
+        "properties": {
+          "id": {
+            "description": "The routine folder ID",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "name": "get_routine_folder"
+    },
+    {
+      "description": "Create a new folder to organize workout routines in Hevy.",
+      "inputSchema": {
+        "properties": {
+          "title": {
+            "description": "Folder title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "type": "object"
+      },
+      "name": "create_routine_folder"
+    }
+  ]
+}
