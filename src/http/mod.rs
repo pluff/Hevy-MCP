@@ -14,6 +14,7 @@ use tracing::info;
 use crate::HevyRouter;
 
 mod handler;
+mod logging;
 mod oauth;
 mod session;
 
@@ -57,6 +58,7 @@ pub async fn serve(router: HevyRouter, addr: SocketAddr) -> Result<(), HttpError
         .route("/token", post(oauth::token))
         .route(&path, post(handler::mcp_handler))
         .route(&path, delete(handler::delete_session))
+        .layer(axum::middleware::from_fn(logging::log_requests))
         .with_state(state);
 
     let listener = TcpListener::bind(addr)

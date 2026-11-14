@@ -18,6 +18,7 @@ docker run -e OAUTH_SECRET=long-random-string -p 5000:5000 ghcr.io/zelosleone/he
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
+| `LOG_LEVEL` | No | `info` | `error`, `warn`, `info` or `debug`. `info` logs one line per request (method, path, status, latency). `debug` also logs request/response headers and bodies with secrets (API keys, tokens, codes) redacted. |
 | `HEVY_HTTP_ADDR` | No | `127.0.0.1:3000` (source) / `0.0.0.0:5000` (Docker) | Socket address to bind the HTTP server |
 | `HEVY_MCP_PATH` | No | `/` | HTTP route path for the MCP endpoint. A leading `/` is added automatically if missing. |
 | `HEVY_SESSION_TIMEOUT_SECS` | No | `3600` | Seconds of inactivity before a session expires |
