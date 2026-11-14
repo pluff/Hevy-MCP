@@ -42,7 +42,7 @@ Use `#[tool_router]`, `#[tool]`, `#[tool_handler]`, `Parameters<T>`, `schemars::
   `get_exercise_history` to `#[tool]` methods with typed `Parameters<...>` structs (derive `Deserialize, JsonSchema`),
   reusing `hevy::types` and existing formatters. Descriptions identical to old ones. Errors → `rmcp::ErrorData`/tool error result.
 
-- [ ] **Part 3 — Routine, folder, template tools.**
+- [x] **Part 3 — Routine, folder, template tools.**
   Port `get_routines`, `get_routine`, `create_routine`, `update_routine`, `get_routine_folders`, `get_routine_folder`,
   `create_routine_folder`, `get_exercise_templates`, `get_exercise_template`, `create_exercise_template`.
   Add test comparing generated tool list (names + required fields) against `tools_baseline.json`; document any intentional schema diffs.

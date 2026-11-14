@@ -12,16 +12,41 @@ use rmcp::{
 };
 
 use crate::hevy::HevyClient;
-use crate::router::formatters::format_workout;
+use crate::hevy::types::{ExerciseTemplatesResponse, RoutineFoldersResponse, RoutinesResponse};
+use crate::router::formatters::{
+    format_exercise_template, format_folder, format_routine, format_workout,
+};
 use crate::router::handlers::exercise_history::format_exercise_history;
 use crate::router::handlers::workouts::{format_workout_events, format_workouts_page};
 
 pub mod args;
 
 use args::{
-    CreateWorkoutParams, ExerciseHistoryParams, PaginationParams, UpdateWorkoutParams,
-    WorkoutEventsParams, WorkoutIdParams,
+    CreateExerciseTemplateParams, CreateRoutineFolderParams, CreateRoutineParams,
+    CreateWorkoutParams, ExerciseHistoryParams, FolderIdParams, PaginationParams, RoutineIdParams,
+    TemplateIdParams, UpdateRoutineParams, UpdateWorkoutParams, WorkoutEventsParams,
+    WorkoutIdParams,
 };
+
+/// Formats a paginated list as `Page X of Y` followed by `---`-separated items.
+fn format_page<T>(
+    page: u32,
+    page_count: u32,
+    items: &[T],
+    empty: &str,
+    fmt: impl Fn(&T) -> String,
+) -> String {
+    let mut output = format!("Page {} of {}\n\n", page, page_count);
+    if items.is_empty() {
+        output.push_str(empty);
+        return output;
+    }
+    for item in items {
+        output.push_str(&fmt(item));
+        output.push_str("\n---\n\n");
+    }
+    output
+}
 
 /// Text result for a successful tool call.
 fn text_result(text: String) -> Result<CallToolResult, ErrorData> {
@@ -84,7 +109,7 @@ impl HevyServer {
     }
 }
 
-#[tool_router]
+#[tool_router(vis = "pub")]
 impl HevyServer {
     #[tool(
         description = "List workouts from Hevy with pagination. Returns workout summaries including title, date, and exercises."
@@ -196,6 +221,189 @@ impl HevyServer {
         {
             Ok(r) => text_result(format_exercise_history(&r)),
             Err(e) => api_error("Error fetching exercise history", e),
+        }
+    }
+    #[tool(
+        description = "List workout routines from Hevy with pagination. Routines are workout templates you can start workouts from."
+    )]
+    async fn get_routines(
+        &self,
+        Parameters(p): Parameters<PaginationParams>,
+        ctx: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let client = self.client_for(&ctx)?;
+        match client.get_routines(p.page, p.page_size).await {
+            Ok(r) => {
+                let r: crate::hevy::PaginatedResponse<RoutinesResponse> = r;
+                text_result(format_page(
+                    r.page,
+                    r.page_count,
+                    &r.data.routines,
+                    "No routines found.",
+                    format_routine,
+                ))
+            }
+            Err(e) => api_error("Error fetching routines", e),
+        }
+    }
+
+    #[tool(
+        description = "Get a single routine by its ID. Returns full routine details including all exercises and set templates."
+    )]
+    async fn get_routine(
+        &self,
+        Parameters(p): Parameters<RoutineIdParams>,
+        ctx: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let client = self.client_for(&ctx)?;
+        match client.get_routine(&p.id).await {
+            Ok(r) => text_result(format_routine(&r)),
+            Err(e) => api_error("Error fetching routine", e),
+        }
+    }
+
+    #[tool(
+        description = "Create a new workout routine in Hevy. Routines serve as templates for workouts."
+    )]
+    async fn create_routine(
+        &self,
+        Parameters(p): Parameters<CreateRoutineParams>,
+        ctx: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let client = self.client_for(&ctx)?;
+        match client.create_routine(p.into()).await {
+            Ok(r) => text_result(format!(
+                "Routine created successfully!\n\n{}",
+                format_routine(&r)
+            )),
+            Err(e) => api_error("Error creating Routine", e),
+        }
+    }
+
+    #[tool(
+        description = "Update an existing routine by ID. Replaces all routine data with the provided values."
+    )]
+    async fn update_routine(
+        &self,
+        Parameters(p): Parameters<UpdateRoutineParams>,
+        ctx: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let client = self.client_for(&ctx)?;
+        let (id, input) = p.into_parts();
+        match client.update_routine(&id, input).await {
+            Ok(r) => text_result(format!(
+                "Routine updated successfully!\n\n{}",
+                format_routine(&r)
+            )),
+            Err(e) => api_error("Error updating Routine", e),
+        }
+    }
+
+    #[tool(
+        description = "List routine folders from Hevy. Folders help organize your workout routines."
+    )]
+    async fn get_routine_folders(
+        &self,
+        Parameters(p): Parameters<PaginationParams>,
+        ctx: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let client = self.client_for(&ctx)?;
+        match client.get_routine_folders(p.page, p.page_size).await {
+            Ok(r) => {
+                let r: crate::hevy::PaginatedResponse<RoutineFoldersResponse> = r;
+                text_result(format_page(
+                    r.page,
+                    r.page_count,
+                    &r.data.routine_folders,
+                    "No routine folders found.",
+                    format_folder,
+                ))
+            }
+            Err(e) => api_error("Error fetching routine folders", e),
+        }
+    }
+
+    #[tool(description = "Get a single routine folder by its ID.")]
+    async fn get_routine_folder(
+        &self,
+        Parameters(p): Parameters<FolderIdParams>,
+        ctx: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let client = self.client_for(&ctx)?;
+        match client.get_routine_folder(&p.id).await {
+            Ok(f) => text_result(format_folder(&f)),
+            Err(e) => api_error("Error fetching routine folder", e),
+        }
+    }
+
+    #[tool(description = "Create a new folder to organize workout routines in Hevy.")]
+    async fn create_routine_folder(
+        &self,
+        Parameters(p): Parameters<CreateRoutineFolderParams>,
+        ctx: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let client = self.client_for(&ctx)?;
+        match client.create_routine_folder(p.into()).await {
+            Ok(f) => text_result(format!(
+                "Folder created successfully!\n\n{}",
+                format_folder(&f)
+            )),
+            Err(e) => api_error("Error creating Folder", e),
+        }
+    }
+
+    #[tool(
+        description = "List exercise templates from Hevy's exercise library. These are the exercises you can add to workouts and routines."
+    )]
+    async fn get_exercise_templates(
+        &self,
+        Parameters(p): Parameters<PaginationParams>,
+        ctx: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let client = self.client_for(&ctx)?;
+        match client.get_exercise_templates(p.page, p.page_size).await {
+            Ok(r) => {
+                let r: crate::hevy::PaginatedResponse<ExerciseTemplatesResponse> = r;
+                text_result(format_page(
+                    r.page,
+                    r.page_count,
+                    &r.data.exercise_templates,
+                    "No exercise templates found.",
+                    format_exercise_template,
+                ))
+            }
+            Err(e) => api_error("Error fetching exercise templates", e),
+        }
+    }
+
+    #[tool(
+        description = "Get a single exercise template by its ID. Returns exercise details including muscle groups and equipment."
+    )]
+    async fn get_exercise_template(
+        &self,
+        Parameters(p): Parameters<TemplateIdParams>,
+        ctx: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let client = self.client_for(&ctx)?;
+        match client.get_exercise_template(&p.id).await {
+            Ok(t) => text_result(format_exercise_template(&t)),
+            Err(e) => api_error("Error fetching exercise template", e),
+        }
+    }
+
+    #[tool(description = "Create a new custom exercise template.")]
+    async fn create_exercise_template(
+        &self,
+        Parameters(p): Parameters<CreateExerciseTemplateParams>,
+        ctx: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, ErrorData> {
+        let client = self.client_for(&ctx)?;
+        match client.create_exercise_template(p.into()).await {
+            Ok(c) => text_result(format!(
+                "Exercise template created successfully!\nID: {}",
+                c.id
+            )),
+            Err(e) => api_error("Error creating exercise template", e),
         }
     }
 }
