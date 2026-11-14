@@ -1,3 +1,4 @@
+use crate::hevy::types::RoutineSet;
 use crate::hevy::{ExerciseTemplate, Routine, RoutineFolder, Workout};
 
 pub(crate) fn format_workout(workout: &Workout) -> String {
@@ -69,10 +70,45 @@ pub(crate) fn format_routine(routine: &Routine) -> String {
         if let Some(notes) = &exercise.notes {
             output.push_str(&format!("     Notes: {}\n", notes));
         }
+        if let Some(superset_id) = exercise.superset_id {
+            output.push_str(&format!("     Superset ID: {}\n", superset_id));
+        }
+        if let Some(rest) = exercise.rest_seconds {
+            output.push_str(&format!("     Rest: {}s\n", rest));
+        }
         output.push_str(&format!("     Sets: {}\n", exercise.sets.len()));
+        for set in &exercise.sets {
+            output.push_str(&format!("     {}\n", format_routine_set(set)));
+        }
     }
 
     output
+}
+
+fn format_routine_set(set: &RoutineSet) -> String {
+    let mut parts = vec![format!("Set {}:", set.index + 1)];
+    if let Some(t) = &set.set_type {
+        parts.push(format!("[{:?}]", t));
+    }
+    if let Some(w) = set.weight_kg {
+        parts.push(format!("{:.1}kg", w));
+    }
+    if let Some(r) = set.reps {
+        parts.push(format!("x{} reps", r));
+    }
+    if let Some(rr) = &set.rep_range {
+        parts.push(format!("{}-{} reps", rr.start, rr.end));
+    }
+    if let Some(d) = set.duration_seconds {
+        parts.push(format!("{}s", d));
+    }
+    if let Some(d) = set.distance_meters {
+        parts.push(format!("{}m", d));
+    }
+    if let Some(c) = set.custom_metric {
+        parts.push(format!("custom: {}", c));
+    }
+    parts.join(" ")
 }
 
 pub(crate) fn format_exercise_template(template: &ExerciseTemplate) -> String {
@@ -205,5 +241,63 @@ fn format_deleted_workout_event(event: &crate::hevy::WorkoutEvent) -> String {
         (Some(id), Some(deleted_at)) => format!("Deleted workout: {} at {}\n", id, deleted_at),
         (Some(id), None) => format!("Deleted workout: {}\n", id),
         (None, _) => "Deleted workout: missing ID\n".to_string(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn routine(json: serde_json::Value) -> Routine {
+        serde_json::from_value(json).expect("valid routine json")
+    }
+
+    #[test]
+    fn format_routine_includes_rest_superset_and_sets() {
+        let r = routine(serde_json::json!({
+            "id": "r1",
+            "title": "Push",
+            "exercises": [
+                {
+                    "index": 0,
+                    "exercise_template_id": "T1",
+                    "superset_id": 2,
+                    "rest_seconds": 90,
+                    "sets": [
+                        {"index": 0, "type": "warmup", "weight_kg": 20.0, "reps": 10},
+                        {"index": 1, "type": "normal", "weight_kg": 60.5, "rep_range": {"start": 6, "end": 8}}
+                    ]
+                },
+                {
+                    "index": 1,
+                    "exercise_template_id": "T2",
+                    "sets": [{"index": 0, "type": "normal", "duration_seconds": 45}]
+                }
+            ]
+        }));
+
+        let out = format_routine(&r);
+
+        assert!(out.contains("     Superset ID: 2\n"), "{out}");
+        assert!(out.contains("     Rest: 90s\n"), "{out}");
+        assert!(out.contains("     Sets: 2\n"), "{out}");
+        assert!(out.contains("Set 1: [Warmup] 20.0kg x10 reps"), "{out}");
+        assert!(out.contains("Set 2: [Normal] 60.5kg 6-8 reps"), "{out}");
+        assert!(out.contains("Set 1: [Normal] 45s"), "{out}");
+    }
+
+    #[test]
+    fn format_routine_omits_absent_rest_and_superset() {
+        let r = routine(serde_json::json!({
+            "id": "r2",
+            "title": "Pull",
+            "exercises": [{"index": 0, "exercise_template_id": "T1", "sets": []}]
+        }));
+
+        let out = format_routine(&r);
+
+        assert!(!out.contains("Superset ID"), "{out}");
+        assert!(!out.contains("Rest:"), "{out}");
+        assert!(out.contains("Sets: 0"), "{out}");
     }
 }
