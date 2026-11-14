@@ -47,7 +47,7 @@ Use `#[tool_router]`, `#[tool]`, `#[tool_handler]`, `Parameters<T>`, `schemars::
   `create_routine_folder`, `get_exercise_templates`, `get_exercise_template`, `create_exercise_template`.
   Add test comparing generated tool list (names + required fields) against `tools_baseline.json`; document any intentional schema diffs.
 
-- [ ] **Part 4 — HTTP transport swap.**
+- [x] **Part 4 — HTTP transport swap.**
   Replace `http/handler.rs` + `http/session.rs` with `StreamableHttpService` (`LocalSessionManager`, session timeout from
   `HEVY_SESSION_TIMEOUT_SECS` via config, path from `HEVY_MCP_PATH`). Bearer middleware: use `oauth.bearer_key`, 401 via
   `oauth.unauthorized`, inject key into request extensions. Keep oauth routes, `/health`, logging layer. Switch `main.rs`/`lib.rs` to `HevyServer`.

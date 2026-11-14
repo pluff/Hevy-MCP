@@ -8,7 +8,7 @@ use tracing_subscriber::filter::Targets;
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::{fmt, registry};
 
-use hevy_mcp_server::{HevyRouter, http};
+use hevy_mcp_server::http;
 
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
@@ -36,7 +36,6 @@ async fn main() -> Result<(), AppError> {
         warn!("Invalid LOG_LEVEL {value:?}, using info (expected error, warn, info or debug)");
     }
 
-    let router = HevyRouter::new();
     let addr = match env::var("HEVY_HTTP_ADDR") {
         Ok(value) => value,
         Err(env::VarError::NotPresent) => match env::var("PORT") {
@@ -50,7 +49,7 @@ async fn main() -> Result<(), AppError> {
         }
     };
     let addr = addr.parse().map_err(AppError::InvalidAddr)?;
-    http::serve(router, addr)
+    http::serve(addr)
         .await
         .map_err(|err| AppError::HttpServe(err.to_string()))?;
 

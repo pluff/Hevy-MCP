@@ -24,7 +24,7 @@ use sha2::{Digest, Sha256};
 use tracing::warn;
 use uuid::Uuid;
 
-use super::handler::AppState;
+use super::AppState;
 
 const CODE_TTL: u64 = 300;
 const ACCESS_TTL: u64 = 3600;

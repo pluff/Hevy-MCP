@@ -22,6 +22,7 @@ docker run -e OAUTH_SECRET=long-random-string -p 5000:5000 ghcr.io/zelosleone/he
 | `HEVY_HTTP_ADDR` | No | `127.0.0.1:3000` (source) / `0.0.0.0:5000` (Docker) | Socket address to bind the HTTP server |
 | `HEVY_MCP_PATH` | No | `/` | HTTP route path for the MCP endpoint. A leading `/` is added automatically if missing. |
 | `HEVY_SESSION_TIMEOUT_SECS` | No | `3600` | Seconds of inactivity before a session expires |
+| `HEVY_ALLOWED_HOSTS` | No | unset (any Host accepted) | Comma-separated `Host` allowlist (e.g. `example.up.railway.app`) for rmcp DNS-rebinding protection. Left unset the check is disabled, since every MCP request needs an OAuth bearer token. |
 
 ## Authentication
 
@@ -58,7 +59,7 @@ Mcp-Session-Id: <session-id>
 
 - A new session is created on each `initialize` request and a UUID is returned via the `Mcp-Session-Id` response header.
 - All non-initialize requests must include the `Mcp-Session-Id` header; requests without it are rejected.
-- Sessions are automatically cleaned up after `HEVY_SESSION_TIMEOUT_SECS` seconds of inactivity (default 3600). A background task checks for expired sessions every 60 seconds.
+- Sessions are closed by rmcp after `HEVY_SESSION_TIMEOUT_SECS` seconds of inactivity (default 3600).
 - Sessions can also be deleted explicitly via the `DELETE` endpoint.
 
 ## Available tools
