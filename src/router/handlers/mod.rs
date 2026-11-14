@@ -9,11 +9,11 @@ use serde_json::Value;
 use crate::hevy::HevyClient;
 
 mod crud;
-mod exercise_history;
+pub(crate) mod exercise_history;
 mod routine_folders;
 mod routines;
 mod templates;
-mod workouts;
+pub(crate) mod workouts;
 
 use exercise_history::handle_get_exercise_history;
 use routine_folders::{

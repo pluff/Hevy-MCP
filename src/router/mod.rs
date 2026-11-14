@@ -13,8 +13,8 @@ use serde_json::Value;
 use crate::hevy::HevyClient;
 
 mod args;
-mod formatters;
-mod handlers;
+pub(crate) mod formatters;
+pub(crate) mod handlers;
 mod tools;
 
 use crate::router::handlers::call_tool;

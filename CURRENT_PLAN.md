@@ -37,7 +37,7 @@ Use `#[tool_router]`, `#[tool]`, `#[tool_handler]`, `Parameters<T>`, `schemars::
   (holds `Arc<HevyRouter>`-style client cache, `ToolRouter<Self>`), `ServerHandler` impl (name, instructions,
   tools capability) and API-key extraction helper from request context. Zero tools yet. Old code stays working.
 
-- [ ] **Part 2 — Workout tools + shared arg types.**
+- [x] **Part 2 — Workout tools + shared arg types.**
   Port `get_workouts`, `get_workouts_count`, `get_workout_events`, `get_workout`, `create_workout`, `update_workout`,
   `get_exercise_history` to `#[tool]` methods with typed `Parameters<...>` structs (derive `Deserialize, JsonSchema`),
   reusing `hevy::types` and existing formatters. Descriptions identical to old ones. Errors → `rmcp::ErrorData`/tool error result.

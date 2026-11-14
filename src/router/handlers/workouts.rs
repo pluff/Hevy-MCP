@@ -113,7 +113,9 @@ pub(crate) async fn handle_update_workout(
     WorkoutHandler::handle_update(client, args).await
 }
 
-fn format_workouts_page(response: &crate::hevy::PaginatedResponse<WorkoutsResponse>) -> String {
+pub(crate) fn format_workouts_page(
+    response: &crate::hevy::PaginatedResponse<WorkoutsResponse>,
+) -> String {
     let mut output = format!("Page {} of {}\n\n", response.page, response.page_count);
     if response.data.workouts.is_empty() {
         output.push_str("No workouts found.");
@@ -127,7 +129,7 @@ fn format_workouts_page(response: &crate::hevy::PaginatedResponse<WorkoutsRespon
     output
 }
 
-fn format_workout_events(response: &crate::hevy::WorkoutEventsResponse) -> String {
+pub(crate) fn format_workout_events(response: &crate::hevy::WorkoutEventsResponse) -> String {
     let mut output = format!("Page {} of {}\n\n", response.page, response.page_count);
     if response.events.is_empty() {
         output.push_str("No workout events found.");

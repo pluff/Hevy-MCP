@@ -17,7 +17,7 @@ pub(crate) async fn handle_get_exercise_history(
     Ok(format_exercise_history(&response))
 }
 
-fn format_exercise_history(response: &crate::hevy::ExerciseHistoryResponse) -> String {
+pub(crate) fn format_exercise_history(response: &crate::hevy::ExerciseHistoryResponse) -> String {
     if response.exercise_history.is_empty() {
         return "No exercise history found.".to_string();
     }
