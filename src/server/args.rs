@@ -30,13 +30,6 @@ pub struct PaginationParams {
     pub page_size: Option<u32>,
 }
 
-/// Arguments for tools that take a single entity ID.
-#[derive(Debug, Deserialize, JsonSchema)]
-pub struct IdParams {
-    /// The ID of the entity
-    pub id: String,
-}
-
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct WorkoutIdParams {
     /// The workout ID

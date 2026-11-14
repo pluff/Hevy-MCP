@@ -41,26 +41,34 @@ When no key is supplied, the server answers `401` with a `WWW-Authenticate` head
 
 Only OAuth access tokens (`Authorization: Bearer <token>`) are accepted.
 
+## Architecture
+
+Built on the official Rust MCP SDK ([`rmcp`](https://crates.io/crates/rmcp)). Tools are declared with rmcp's `#[tool]` macros in `src/server/`, and the MCP endpoint is served by rmcp's `StreamableHttpService` behind an axum bearer-token middleware (`src/http/`). The Hevy API client lives in `src/hevy/`.
+
 ## HTTP transport
 
-The server exposes two endpoints on the configured path (default `/`):
+The server speaks MCP Streamable HTTP on the configured path (default `/`).
+
+Every MCP request must carry `Authorization: Bearer <token>`; requests without a valid token get `401`.
 
 ### `POST {path}` -- MCP requests
 
-Send JSON-RPC requests and notifications. The first request must be an `initialize` call. The response includes an `Mcp-Session-Id` header that must be sent on all subsequent requests.
+Send JSON-RPC requests and notifications. The first request must be an `initialize` call. Responses to `initialize` and `tools/call` are `text/event-stream` (SSE), not plain JSON; notifications are acknowledged with `202`. The `initialize` response includes an `Mcp-Session-Id` header that must be sent on all subsequent requests.
 
 ```
 POST /
+Authorization: Bearer <token>
 Content-Type: application/json
+Accept: application/json, text/event-stream
 Mcp-Session-Id: <session-id>
 ```
 
 ### Session lifecycle
 
-- A new session is created on each `initialize` request and a UUID is returned via the `Mcp-Session-Id` response header.
+- A new session is created on each `initialize` request and its ID is returned via the `Mcp-Session-Id` response header.
 - All non-initialize requests must include the `Mcp-Session-Id` header; requests without it are rejected.
 - Sessions are closed by rmcp after `HEVY_SESSION_TIMEOUT_SECS` seconds of inactivity (default 3600).
-- Sessions can also be deleted explicitly via the `DELETE` endpoint.
+- `DELETE {path}` with the session header closes a session and returns `202`.
 
 ## Available tools
 

@@ -13,13 +13,13 @@ use rmcp::{
 
 use crate::hevy::HevyClient;
 use crate::hevy::types::{ExerciseTemplatesResponse, RoutineFoldersResponse, RoutinesResponse};
-use crate::router::formatters::{
-    format_exercise_template, format_folder, format_routine, format_workout,
-};
-use crate::router::handlers::exercise_history::format_exercise_history;
-use crate::router::handlers::workouts::{format_workout_events, format_workouts_page};
-
 pub mod args;
+mod formatters;
+
+use formatters::{
+    format_exercise_history, format_exercise_template, format_folder, format_routine,
+    format_workout, format_workout_events, format_workouts_page,
+};
 
 use args::{
     CreateExerciseTemplateParams, CreateRoutineFolderParams, CreateRoutineParams,
